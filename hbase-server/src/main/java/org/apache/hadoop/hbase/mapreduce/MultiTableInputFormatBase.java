@@ -25,12 +25,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
+import org.apache.hadoop.hbase.HRegionInfo;
+import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
+import org.apache.hadoop.hbase.util.RegionSizeCalculator;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
@@ -139,12 +142,15 @@ public abstract class MultiTableInputFormatBase extends
         byte[] startRow = scan.getStartRow();
         byte[] stopRow = scan.getStopRow();
 
+        RegionSizeCalculator sizeEstimator = new RegionSizeCalculator(table, scan.getFamilies());
+
         for (int i = 0; i < keys.getFirst().length; i++) {
           if (!includeRegionInSplit(keys.getFirst()[i], keys.getSecond()[i])) {
             continue;
           }
-          String regionLocation =
-              table.getRegionLocation(keys.getFirst()[i], false).getHostname();
+          HRegionLocation hregionLocation = table.getRegionLocation(keys.getFirst()[i], false);
+          String regionHostname = hregionLocation.getHostname();
+          HRegionInfo regionInfo = hregionLocation.getRegionInfo();
         
           // determine if the given start and stop keys fall into the range
           if ((startRow.length == 0 || keys.getSecond()[i].length == 0 ||
@@ -159,9 +165,12 @@ public abstract class MultiTableInputFormatBase extends
                 (stopRow.length == 0 || Bytes.compareTo(keys.getSecond()[i],
                     stopRow) <= 0) && keys.getSecond()[i].length > 0 ? keys
                     .getSecond()[i] : stopRow;
-            InputSplit split =
+            TableSplit split =
                 new TableSplit(table.getName(),
-                    scan, splitStart, splitStop, regionLocation);
+                    scan, splitStart, splitStop, regionHostname);
+
+            split.setLength(sizeEstimator.getRegionSize(regionInfo));
+
             splits.add(split);
             if (LOG.isDebugEnabled())
               LOG.debug("getSplits: split -> " + (count++) + " -> " + split);

@@ -82,6 +82,7 @@ implements Writable, Comparable<TableSplit> {
   private byte [] endRow;
   private String regionLocation;
   private String scan = ""; // stores the serialized form of the Scan
+  private long length; // Contains estimation of region size in bytes
 
   /** Default constructor. */
   public TableSplit() {
@@ -220,8 +221,11 @@ implements Writable, Comparable<TableSplit> {
    */
   @Override
   public long getLength() {
-    // Not clear how to obtain this... seems to be used only for sorting splits
-    return 0;
+    return length;
+  }
+
+  public void setLength(long length) {
+    this.length = length;
   }
 
   /**
@@ -256,6 +260,7 @@ implements Writable, Comparable<TableSplit> {
     if (version.atLeast(Version.INITIAL)) {
       scan = Bytes.toString(Bytes.readByteArray(in));
     }
+    length = WritableUtils.readVLong(in);
   }
 
   /**
@@ -272,6 +277,7 @@ implements Writable, Comparable<TableSplit> {
     Bytes.writeByteArray(out, endRow);
     Bytes.writeByteArray(out, Bytes.toBytes(regionLocation));
     Bytes.writeByteArray(out, Bytes.toBytes(scan));
+    WritableUtils.writeVLong(out, length);
   }
 
   /**
