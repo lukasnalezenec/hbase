@@ -224,7 +224,7 @@ implements Writable, Comparable<TableSplit> {
     return length;
   }
 
-  public void setLength(long length) {
+  void setLength(long length) {
     this.length = length;
   }
 

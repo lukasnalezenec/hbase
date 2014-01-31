@@ -38,7 +38,7 @@ import java.util.Set;
 @InterfaceStability.Evolving
 public class RegionSizeCalculator {
 
-  final Log LOG = LogFactory.getLog(MultiTableInputFormatBase.class);
+  final Log LOG = LogFactory.getLog(RegionSizeCalculator.class);
 
   Map<HRegionInfo, Long> sizeMap = new HashMap<HRegionInfo, Long>();
 
@@ -93,16 +93,14 @@ public class RegionSizeCalculator {
   }
 
   //converts list of families to Set<String>
-  private Set<String> makeFamilyFilter(byte[][] families) {
+  private void makeFamilyFilter(byte[][] families) {
     if (families != null) {
       Set<String> result = new HashSet<String>(families.length);
       for (byte[] family : families) {
         result.add(new String(family));
       }
 
-      if (!result.isEmpty()) return result;
+      if (!result.isEmpty()) filteredFamilies = result;
     }
-
-    return null;
   }
 }
