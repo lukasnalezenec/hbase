@@ -35,13 +35,16 @@ import java.util.Map;
 import java.util.Set;
 
 @InterfaceStability.Evolving
+/**
+ * Computes size of each region for table and given column families.
+ * */
 public class RegionSizeCalculator {
 
   final Log LOG = LogFactory.getLog(RegionSizeCalculator.class);
 
-  Map<HRegionInfo, Long> sizeMap = new HashMap<HRegionInfo, Long>();
+  final Map<HRegionInfo, Long> sizeMap = new HashMap<HRegionInfo, Long>();
 
-  Set<String> filteredFamilies;
+  final Set<String> filteredFamilies;
 
   public RegionSizeCalculator(HTable table) throws IOException {
     this(table, null);
@@ -56,7 +59,7 @@ public class RegionSizeCalculator {
     Path tablePath = FSUtils.getTableDir(FSUtils.getRootDir(configuration), table.getName());
     FileSystem fs = tablePath.getFileSystem(configuration);
 
-    makeFamilyFilter(families);
+    filteredFamilies = makeFamilyFilter(families);
 
     Set<HRegionInfo> regionInfos = table.getRegionLocations().keySet();
 
@@ -92,14 +95,16 @@ public class RegionSizeCalculator {
   }
 
   //converts list of families to Set<String>
-  private void makeFamilyFilter(byte[][] families) {
+  private Set<String> makeFamilyFilter(byte[][] families) {
     if (families != null) {
       Set<String> result = new HashSet<String>(families.length);
       for (byte[] family : families) {
         result.add(new String(family));
       }
 
-      if (!result.isEmpty()) filteredFamilies = result;
+      if (!result.isEmpty()) return result;
     }
+
+    return null;
   }
 }
