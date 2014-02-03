@@ -27,7 +27,7 @@ import org.junit.experimental.categories.Category;
 
 import java.util.HashSet;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category(SmallTests.class)
@@ -81,8 +81,10 @@ public class TestTableSplit {
             "row-end".getBytes(), "location");
     split1.setLength(666);
 
-    TableSplit deserialized = new TableSplit();
-    ReflectionUtils.copy(new Configuration(), deserialized, split1);
+    TableSplit deserialized = new TableSplit(TableName.valueOf("table"),
+            "row-start2".getBytes(),
+            "row-end2".getBytes(), "location1");
+    ReflectionUtils.copy(new Configuration(), split1, deserialized);
 
     Assert.assertEquals(666, deserialized.getLength());
   }

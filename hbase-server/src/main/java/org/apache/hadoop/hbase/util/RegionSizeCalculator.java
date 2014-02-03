@@ -36,13 +36,19 @@ import java.util.Set;
 
 @InterfaceStability.Evolving
 /**
- * Computes size of each region for table and given column families.
+ * Computes size of each region for given table and given column families.
+ * The value is used by MapReduce for better scheduling.
  * */
 public class RegionSizeCalculator {
 
   final Log LOG = LogFactory.getLog(RegionSizeCalculator.class);
 
+  /**
+   * Maps each region represented by HRegionInfo to its size in bytes.
+   * */
   final Map<HRegionInfo, Long> sizeMap = new HashMap<HRegionInfo, Long>();
+
+  static final String DISABLE_REGIONSIZECALCULATOR = "hbase.regionsizecalculator.disabled";
 
   public RegionSizeCalculator(HTable table) throws IOException {
     this(table, null);
@@ -54,7 +60,7 @@ public class RegionSizeCalculator {
   public RegionSizeCalculator(HTable table, byte[][] families) throws IOException {
     Configuration configuration = table.getConfiguration();
 
-    if (configuration.getBoolean("hbase.regionsizecalculator.disabled", false)) {
+    if (configuration.getBoolean(DISABLE_REGIONSIZECALCULATOR, false)) {
       LOG.info("Region size calculation disabled.");
       return;
     }
@@ -69,7 +75,7 @@ public class RegionSizeCalculator {
     Set<HRegionInfo> regionInfos = table.getRegionLocations().keySet();
 
     for (HRegionInfo info : regionInfos) {
-      long estimation = 0;
+      long regionSize = 0;
 
       String regionDirectory = info.getEncodedName();
       Path fullRegionPath = new Path(tablePath, regionDirectory);
@@ -81,15 +87,18 @@ public class RegionSizeCalculator {
 
         boolean familyIncluded = filteredFamilies == null || filteredFamilies.contains(familyDirName);
         if (familyIncluded && fs.exists(familyPath)) {
-          estimation += fs.getContentSummary(familyPath).getSpaceConsumed();
+          regionSize += fs.getContentSummary(familyPath).getSpaceConsumed();
         }
 
       }
 
-      sizeMap.put(info, estimation);
+      sizeMap.put(info, regionSize);
     }
   }
 
+  /**
+   * Returns size of given region in bytes. Returns 0 if region was not found.
+   * */
   public long getRegionSize(HRegionInfo region) {
     Long size = sizeMap.get(region);
     return (size == null) ? 0 : size;
