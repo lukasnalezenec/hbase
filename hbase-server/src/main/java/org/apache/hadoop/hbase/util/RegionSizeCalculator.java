@@ -41,12 +41,12 @@ import java.util.Set;
  * */
 public class RegionSizeCalculator {
 
-  final Log LOG = LogFactory.getLog(RegionSizeCalculator.class);
+  private final Log LOG = LogFactory.getLog(RegionSizeCalculator.class);
 
   /**
    * Maps each region represented by HRegionInfo to its size in bytes.
    * */
-  final Map<HRegionInfo, Long> sizeMap = new HashMap<HRegionInfo, Long>();
+  private final Map<HRegionInfo, Long> sizeMap = new HashMap<HRegionInfo, Long>();
 
   static final String DISABLE_REGIONSIZECALCULATOR = "hbase.regionsizecalculator.disabled";
 
