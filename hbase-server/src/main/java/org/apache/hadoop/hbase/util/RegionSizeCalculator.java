@@ -44,8 +44,6 @@ public class RegionSizeCalculator {
 
   final Map<HRegionInfo, Long> sizeMap = new HashMap<HRegionInfo, Long>();
 
-  final Set<String> filteredFamilies;
-
   public RegionSizeCalculator(HTable table) throws IOException {
     this(table, null);
   }
@@ -54,12 +52,19 @@ public class RegionSizeCalculator {
    * Computes size of each region for table and given column families.
    * */
   public RegionSizeCalculator(HTable table, byte[][] families) throws IOException {
-
     Configuration configuration = table.getConfiguration();
+
+    if (configuration.getBoolean("hbase.regionsizecalculator.disabled", false)) {
+      LOG.info("Region size calculation disabled.");
+      return;
+    }
+
+    LOG.info("Calculating region sizes for table \"" + new String(table.getTableName()) + "\".");
+
     Path tablePath = FSUtils.getTableDir(FSUtils.getRootDir(configuration), table.getName());
     FileSystem fs = tablePath.getFileSystem(configuration);
 
-    filteredFamilies = makeFamilyFilter(families);
+    final Set<String> filteredFamilies = makeFamilyFilter(families);
 
     Set<HRegionInfo> regionInfos = table.getRegionLocations().keySet();
 
@@ -74,7 +79,7 @@ public class RegionSizeCalculator {
       for (Path familyPath : allFamilyPaths) {
         String familyDirName = familyPath.getName();
 
-        boolean familyIncluded = this.filteredFamilies == null || filteredFamilies.contains(familyDirName);
+        boolean familyIncluded = filteredFamilies == null || filteredFamilies.contains(familyDirName);
         if (familyIncluded && fs.exists(familyPath)) {
           estimation += fs.getContentSummary(familyPath).getSpaceConsumed();
         }

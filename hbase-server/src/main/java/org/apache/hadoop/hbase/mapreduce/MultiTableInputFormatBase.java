@@ -18,6 +18,7 @@
 package org.apache.hadoop.hbase.mapreduce;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,6 +77,7 @@ public abstract class MultiTableInputFormatBase extends
       InputSplit split, TaskAttemptContext context)
       throws IOException, InterruptedException {
     TableSplit tSplit = (TableSplit) split;
+    LOG.info(MessageFormat.format("Input split length: {0} bytes.", tSplit.getLength()));
 
     if (tSplit.getTableName() == null) {
       throw new IOException("Cannot create a record reader because of a"
@@ -142,7 +144,7 @@ public abstract class MultiTableInputFormatBase extends
         byte[] startRow = scan.getStartRow();
         byte[] stopRow = scan.getStopRow();
 
-        RegionSizeCalculator sizeEstimator = new RegionSizeCalculator(table, scan.getFamilies());
+        RegionSizeCalculator sizeCalculator = new RegionSizeCalculator(table, scan.getFamilies());
 
         for (int i = 0; i < keys.getFirst().length; i++) {
           if (!includeRegionInSplit(keys.getFirst()[i], keys.getSecond()[i])) {
@@ -169,7 +171,7 @@ public abstract class MultiTableInputFormatBase extends
                 new TableSplit(table.getName(),
                     scan, splitStart, splitStop, regionHostname);
 
-            split.setLength(sizeEstimator.getRegionSize(regionInfo));
+            split.setLength(sizeCalculator.getRegionSize(regionInfo));
 
             splits.add(split);
             if (LOG.isDebugEnabled())
