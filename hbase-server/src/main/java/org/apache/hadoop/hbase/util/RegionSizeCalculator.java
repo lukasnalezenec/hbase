@@ -89,7 +89,6 @@ public class RegionSizeCalculator {
         if (familyIncluded && fs.exists(familyPath)) {
           regionSize += fs.getContentSummary(familyPath).getSpaceConsumed();
         }
-
       }
 
       sizeMap.put(info, regionSize);
@@ -113,7 +112,7 @@ public class RegionSizeCalculator {
     if (families != null) {
       Set<String> result = new HashSet<String>(families.length);
       for (byte[] family : families) {
-        result.add(new String(family));
+        result.add(Bytes.toString(family));
       }
 
       if (!result.isEmpty()) return result;
