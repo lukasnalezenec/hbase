@@ -21,18 +21,18 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.HRegionInfo;
+import org.apache.hadoop.hbase.ClusterStatus;
+import org.apache.hadoop.hbase.RegionLoad;
+import org.apache.hadoop.hbase.ServerLoad;
+import org.apache.hadoop.hbase.ServerName;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.TreeMap;
 
 @InterfaceStability.Evolving
 /**
@@ -46,18 +46,14 @@ public class RegionSizeCalculator {
   /**
    * Maps each region represented by HRegionInfo to its size in bytes.
    * */
-  private final Map<HRegionInfo, Long> sizeMap = new HashMap<HRegionInfo, Long>();
+  private final Map<byte[], Long> sizeMap = new TreeMap<byte[], Long>(Bytes.BYTES_COMPARATOR);
 
   static final String DISABLE_REGIONSIZECALCULATOR = "hbase.regionsizecalculator.disabled";
-
-  public RegionSizeCalculator(HTable table) throws IOException {
-    this(table, null);
-  }
 
   /**
    * Computes size of each region for table and given column families.
    * */
-  public RegionSizeCalculator(HTable table, byte[][] families) throws IOException {
+  public RegionSizeCalculator(HTable table) throws IOException {
     Configuration configuration = table.getConfiguration();
 
     if (configuration.getBoolean(DISABLE_REGIONSIZECALCULATOR, false)) {
@@ -67,57 +63,38 @@ public class RegionSizeCalculator {
 
     LOG.info("Calculating region sizes for table \"" + new String(table.getTableName()) + "\".");
 
-    Path tablePath = FSUtils.getTableDir(FSUtils.getRootDir(configuration), table.getName());
-    FileSystem fs = tablePath.getFileSystem(configuration);
+    //TODO filter regions by table !!!!!!
 
-    final Set<String> filteredFamilies = makeFamilyFilter(families);
+    HBaseAdmin admin = new HBaseAdmin(configuration);
 
-    Set<HRegionInfo> regionInfos = table.getRegionLocations().keySet();
+    ClusterStatus clusterStatus = admin.getClusterStatus();
+    Collection<ServerName> servers = clusterStatus.getServers();
 
-    for (HRegionInfo info : regionInfos) {
-      long regionSize = 0;
+    for (ServerName serverName: servers) {
+      ServerLoad serverLoad = clusterStatus.getLoad(serverName);
 
-      String regionDirectory = info.getEncodedName();
-      Path fullRegionPath = new Path(tablePath, regionDirectory);
+      for (Map.Entry<byte[], RegionLoad> regionEntry: serverLoad.getRegionsLoad().entrySet()) {
+        byte[] regionId = regionEntry.getKey();
+        RegionLoad regionLoad = regionEntry.getValue();
 
-      List<Path> allFamilyPaths = FSUtils.getFamilyDirs(fs, fullRegionPath);
+        long regionSize = 1024 * 1024 * (regionLoad.getMemStoreSizeMB() + regionLoad.getStorefileSizeMB());
 
-      for (Path familyPath : allFamilyPaths) {
-        String familyDirName = familyPath.getName();
-
-        boolean familyIncluded = filteredFamilies == null || filteredFamilies.contains(familyDirName);
-        if (familyIncluded && fs.exists(familyPath)) {
-          regionSize += fs.getContentSummary(familyPath).getSpaceConsumed();
-        }
+        sizeMap.put(regionId, regionSize);
       }
-
-      sizeMap.put(info, regionSize);
     }
+
   }
+
 
   /**
    * Returns size of given region in bytes. Returns 0 if region was not found.
    * */
-  public long getRegionSize(HRegionInfo region) {
-    Long size = sizeMap.get(region);
+  public long getRegionSize(byte[] regionId) {
+    Long size = sizeMap.get(regionId);
     return (size == null) ? 0 : size;
   }
 
-  public Map<HRegionInfo, Long> getRegionSizeMap() {
+  public Map<byte[], Long> getRegionSizeMap() {
     return Collections.unmodifiableMap(sizeMap);
-  }
-
-  //converts list of families to Set<String>
-  private Set<String> makeFamilyFilter(byte[][] families) {
-    if (families != null) {
-      Set<String> result = new HashSet<String>(families.length);
-      for (byte[] family : families) {
-        result.add(Bytes.toString(family));
-      }
-
-      if (!result.isEmpty()) return result;
-    }
-
-    return null;
   }
 }
