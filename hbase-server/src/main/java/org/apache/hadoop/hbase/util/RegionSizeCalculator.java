@@ -22,6 +22,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.ClusterStatus;
+import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.RegionLoad;
 import org.apache.hadoop.hbase.ServerLoad;
 import org.apache.hadoop.hbase.ServerName;
@@ -32,7 +33,9 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 @InterfaceStability.Evolving
 /**
@@ -63,7 +66,12 @@ public class RegionSizeCalculator {
 
     LOG.info("Calculating region sizes for table \"" + new String(table.getTableName()) + "\".");
 
-    //TODO filter regions by table !!!!!!
+    //get regions for table
+    Set<HRegionInfo> tableRegionInfos = table.getRegionLocations().keySet();
+    Set<byte[]> tableRegions= new TreeSet<byte[]>(Bytes.BYTES_COMPARATOR);
+    for (HRegionInfo regionInfo : tableRegionInfos) {
+      tableRegions.add(regionInfo.getRegionName());
+    }
 
     HBaseAdmin admin = new HBaseAdmin(configuration);
 
@@ -77,9 +85,12 @@ public class RegionSizeCalculator {
         byte[] regionId = regionEntry.getKey();
         RegionLoad regionLoad = regionEntry.getValue();
 
+
         long regionSize = 1024 * 1024 * (regionLoad.getMemStoreSizeMB() + regionLoad.getStorefileSizeMB());
 
-        sizeMap.put(regionId, regionSize);
+        if (tableRegions.contains(regionId)) {
+          sizeMap.put(regionId, regionSize);
+        }
       }
     }
 
