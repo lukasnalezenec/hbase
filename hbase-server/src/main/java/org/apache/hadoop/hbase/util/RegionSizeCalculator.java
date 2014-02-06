@@ -30,6 +30,7 @@ import org.apache.hadoop.hbase.client.HTable;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -98,6 +99,8 @@ public class RegionSizeCalculator {
         }
       }
     }
+
+    LOG.debug("Region sizes calculated");
   }
 
 
@@ -106,7 +109,12 @@ public class RegionSizeCalculator {
    * */
   public long getRegionSize(byte[] regionId) {
     Long size = sizeMap.get(regionId);
-    return (size == null) ? 0 : size;
+    if (size == null) {
+      LOG.debug("Unknown region:" + Arrays.toString(regionId));
+      return 0;
+    } else {
+      return size;
+    }
   }
 
   public Map<byte[], Long> getRegionSizeMap() {
