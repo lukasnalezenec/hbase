@@ -156,7 +156,7 @@ extends InputFormat<ImmutableBytesWritable, Result> {
     this.nameServer =
       context.getConfiguration().get("hbase.nameserver.address", null);
 
-    RegionSizeCalculator sizeCalculator = new RegionSizeCalculator(table, scan.getFamilies());
+    RegionSizeCalculator sizeCalculator = new RegionSizeCalculator(table);
 
     Pair<byte[][], byte[][]> keys = table.getStartEndKeys();
     if (keys == null || keys.getFirst() == null ||
@@ -169,7 +169,7 @@ extends InputFormat<ImmutableBytesWritable, Result> {
       TableSplit split = new TableSplit(table.getName(),
           HConstants.EMPTY_BYTE_ARRAY, HConstants.EMPTY_BYTE_ARRAY, regLoc
               .getHostnamePort().split(Addressing.HOSTNAME_PORT_SEPARATOR)[0]);
-      split.setLength(sizeCalculator.getRegionSize(regLoc.getRegionInfo()));
+      split.setLength(sizeCalculator.getRegionSize(regLoc.getRegionInfo().getRegionName()));
       splits.add(split);
       return splits;
     }
@@ -209,7 +209,8 @@ extends InputFormat<ImmutableBytesWritable, Result> {
             keys.getSecond()[i] : stopRow;
         TableSplit split = new TableSplit(table.getName(),
           splitStart, splitStop, regionLocation);
-        split.setLength(sizeCalculator.getRegionSize(location.getRegionInfo()));
+        byte[] regionName = location.getRegionInfo().getRegionName();
+        split.setLength(sizeCalculator.getRegionSize(regionName));
         splits.add(split);
         if (LOG.isDebugEnabled()) {
           LOG.debug("getSplits: split -> " + i + " -> " + split);

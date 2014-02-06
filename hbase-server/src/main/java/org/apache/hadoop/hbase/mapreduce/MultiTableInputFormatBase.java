@@ -144,7 +144,7 @@ public abstract class MultiTableInputFormatBase extends
         byte[] startRow = scan.getStartRow();
         byte[] stopRow = scan.getStopRow();
 
-        RegionSizeCalculator sizeCalculator = new RegionSizeCalculator(table, scan.getFamilies());
+        RegionSizeCalculator sizeCalculator = new RegionSizeCalculator(table);
 
         for (int i = 0; i < keys.getFirst().length; i++) {
           if (!includeRegionInSplit(keys.getFirst()[i], keys.getSecond()[i])) {
@@ -171,7 +171,7 @@ public abstract class MultiTableInputFormatBase extends
                 new TableSplit(table.getName(),
                     scan, splitStart, splitStop, regionHostname);
 
-            split.setLength(sizeCalculator.getRegionSize(regionInfo));
+            split.setLength(sizeCalculator.getRegionSize(regionInfo.getRegionName()));
 
             splits.add(split);
             if (LOG.isDebugEnabled())
