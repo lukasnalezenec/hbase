@@ -51,7 +51,7 @@ public class RegionSizeCalculator {
   private final Log LOG = LogFactory.getLog(RegionSizeCalculator.class);
 
   /**
-   * Maps each region represented to its size in bytes.
+   * Maps each region to its size in bytes.
    * */
   private final Map<byte[], Long> sizeMap = new TreeMap<byte[], Long>(Bytes.BYTES_COMPARATOR);
 
