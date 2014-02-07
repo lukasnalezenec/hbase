@@ -45,7 +45,7 @@ import java.util.TreeSet;
  * The value is used by MapReduce for better scheduling.
  * */
 @InterfaceStability.Evolving
-@InterfaceAudience.Private
+@InterfaceAudience.Public
 public class RegionSizeCalculator {
 
   private final Log LOG = LogFactory.getLog(RegionSizeCalculator.class);
@@ -66,49 +66,56 @@ public class RegionSizeCalculator {
 
   /** ctor for unit testing */
   RegionSizeCalculator (HTable table, HBaseAdmin admin) throws IOException {
-    if (!enabled(table.getConfiguration())) {
-      LOG.info("Region size calculation disabled.");
-      return;
-    }
 
-    LOG.info("Calculating region sizes for table \"" + new String(table.getTableName()) + "\".");
+    try {
+      if (!enabled(table.getConfiguration())) {
+        LOG.info("Region size calculation disabled.");
+        return;
+      }
 
-    //get regions for table
-    Set<HRegionInfo> tableRegionInfos = table.getRegionLocations().keySet();
-    Set<byte[]> tableRegions = new TreeSet<byte[]>(Bytes.BYTES_COMPARATOR);
-    for (HRegionInfo regionInfo : tableRegionInfos) {
-      tableRegions.add(regionInfo.getRegionName());
-    }
+      LOG.info("Calculating region sizes for table \"" + new String(table.getTableName()) + "\".");
 
-    ClusterStatus clusterStatus = admin.getClusterStatus();
-    Collection<ServerName> servers = clusterStatus.getServers();
-    final long megaByte = 1024L * 1024L;
+      //get regions for table
+      Set<HRegionInfo> tableRegionInfos = table.getRegionLocations().keySet();
+      Set<byte[]> tableRegions = new TreeSet<byte[]>(Bytes.BYTES_COMPARATOR);
+      for (HRegionInfo regionInfo : tableRegionInfos) {
+        tableRegions.add(regionInfo.getRegionName());
+      }
 
-    //iterate all cluster regions, filter regions from our table and compute their size
-    for (ServerName serverName: servers) {
-      ServerLoad serverLoad = clusterStatus.getLoad(serverName);
+      ClusterStatus clusterStatus = admin.getClusterStatus();
+      Collection<ServerName> servers = clusterStatus.getServers();
+      final long megaByte = 1024L * 1024L;
 
-      for (RegionLoad regionLoad: serverLoad.getRegionsLoad().values()) {
-        byte[] regionId = regionLoad.getName();
+      //iterate all cluster regions, filter regions from our table and compute their size
+      for (ServerName serverName: servers) {
+        ServerLoad serverLoad = clusterStatus.getLoad(serverName);
 
-        if (tableRegions.contains(regionId)) {
-          long memSize = regionLoad.getMemStoreSizeMB();
-          long fileSize = regionLoad.getStorefileSizeMB();
-          long regionSizeBytes = (memSize + fileSize) * megaByte;
+        for (RegionLoad regionLoad: serverLoad.getRegionsLoad().values()) {
+          byte[] regionId = regionLoad.getName();
 
-          sizeMap.put(regionId, regionSizeBytes);
-          LOG.debug(MessageFormat.format("Region {0} has size {1}", regionLoad.getNameAsString(), regionSizeBytes));
+          if (tableRegions.contains(regionId)) {
+            long memSize = regionLoad.getMemStoreSizeMB();
+            long fileSize = regionLoad.getStorefileSizeMB();
+            long regionSizeBytes = (memSize + fileSize) * megaByte;
+
+            sizeMap.put(regionId, regionSizeBytes);
+            if (LOG.isDebugEnabled()) {
+              LOG.debug("Region " + regionLoad.getNameAsString() + " has size " + regionSizeBytes);
+            }
+          }
         }
       }
+      LOG.debug("Region sizes calculated");
+
+    } finally {
+      admin.close();
     }
 
-    LOG.debug("Region sizes calculated");
   }
 
   boolean enabled(Configuration configuration) {
     return configuration.getBoolean(ENABLE_REGIONSIZECALCULATOR, true);
   }
-
 
   /**
    * Returns size of given region in bytes. Returns 0 if region was not found.
