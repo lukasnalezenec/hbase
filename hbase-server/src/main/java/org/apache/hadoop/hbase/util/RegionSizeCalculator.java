@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.ClusterStatus;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.RegionLoad;
@@ -54,7 +55,7 @@ public class RegionSizeCalculator {
    * */
   private final Map<byte[], Long> sizeMap = new TreeMap<byte[], Long>(Bytes.BYTES_COMPARATOR);
 
-  static final String DISABLE_REGIONSIZECALCULATOR = "hbase.regionsizecalculator.disabled";
+  static final String ENABLE_REGIONSIZECALCULATOR = "hbase.regionsizecalculator.enable";
 
   /**
    * Computes size of each region for table and given column families.
@@ -63,11 +64,9 @@ public class RegionSizeCalculator {
     this(table, new HBaseAdmin(table.getConfiguration()));
   }
 
-  /**
-   * Constructor for junit tests.
-   * */
-  RegionSizeCalculator(HTable table, HBaseAdmin admin) throws IOException {
-    if (table.getConfiguration().getBoolean(DISABLE_REGIONSIZECALCULATOR, false)) {
+  /** ctor for unit testing */
+  RegionSizeCalculator (HTable table, HBaseAdmin admin) throws IOException {
+    if (!enabled(table.getConfiguration())) {
       LOG.info("Region size calculation disabled.");
       return;
     }
@@ -104,6 +103,10 @@ public class RegionSizeCalculator {
     }
 
     LOG.debug("Region sizes calculated");
+  }
+
+  boolean enabled(Configuration configuration) {
+    return configuration.getBoolean(ENABLE_REGIONSIZECALCULATOR, true);
   }
 
 
