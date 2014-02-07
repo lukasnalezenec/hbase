@@ -94,11 +94,10 @@ public class RegionSizeCalculator {
           byte[] regionId = regionLoad.getName();
 
           if (tableRegions.contains(regionId)) {
-            long memSize = regionLoad.getMemStoreSizeMB();
-            long fileSize = regionLoad.getStorefileSizeMB();
-            long regionSizeBytes = (memSize + fileSize) * megaByte;
 
+            long regionSizeBytes = regionLoad.getStorefileSizeMB() * megaByte;
             sizeMap.put(regionId, regionSizeBytes);
+
             if (LOG.isDebugEnabled()) {
               LOG.debug("Region " + regionLoad.getNameAsString() + " has size " + regionSizeBytes);
             }

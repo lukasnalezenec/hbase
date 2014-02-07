@@ -54,20 +54,20 @@ public class RegionSizeCalculatorTest {
 
     HBaseAdmin admin = mockAdmin(
       mockServer(
-        mockRegion("region1", 122, 123),
-        mockRegion("region3", 12211, 1232)
+        mockRegion("region1", 123),
+        mockRegion("region3", 1232)
       ),
       mockServer(
-        mockRegion("region2", 0, 54321),
-        mockRegion("otherTableRegion", 110, 0)
+        mockRegion("region2",  54321),
+        mockRegion("otherTableRegion", 110)
       )
     );
 
     RegionSizeCalculator calculator = new RegionSizeCalculator(table, admin);
 
-    assertEquals((122 + 123) * megabyte, calculator.getRegionSize("region1".getBytes()));
+    assertEquals(123 * megabyte, calculator.getRegionSize("region1".getBytes()));
     assertEquals(54321 * megabyte, calculator.getRegionSize("region2".getBytes()));
-    assertEquals((12211 + 1232) * megabyte, calculator.getRegionSize("region3".getBytes()));
+    assertEquals(1232 * megabyte, calculator.getRegionSize("region3".getBytes()));
     // if region is not inside our table, it should return 0
     assertEquals(0 * megabyte, calculator.getRegionSize("otherTableRegion".getBytes()));
 
@@ -86,13 +86,13 @@ public class RegionSizeCalculatorTest {
 
     HBaseAdmin admin = mockAdmin(
       mockServer(
-        mockRegion("largeRegion", Integer.MAX_VALUE, Integer.MAX_VALUE)
+        mockRegion("largeRegion", Integer.MAX_VALUE)
       )
     );
 
     RegionSizeCalculator calculator = new RegionSizeCalculator(table, admin);
 
-    assertEquals((2 * ((long) Integer.MAX_VALUE)) * megabyte, calculator.getRegionSize("largeRegion".getBytes()));
+    assertEquals(((long) Integer.MAX_VALUE) * megabyte, calculator.getRegionSize("largeRegion".getBytes()));
   }
 
   /** When calculator is disabled, it should return 0 for each request.*/
@@ -103,7 +103,7 @@ public class RegionSizeCalculatorTest {
 
     HBaseAdmin admin = mockAdmin(
       mockServer(
-        mockRegion(regionName, 0, 999)
+        mockRegion(regionName, 999)
       )
     );
 
@@ -152,15 +152,13 @@ public class RegionSizeCalculatorTest {
   /**
    * Creates mock of region with given name and size.
    *
-   * @param  memSizeMB number of megabytes occupied by region in memory in megabytes
    * @param  fileSizeMb number of megabytes occupied by region in file store in megabytes
    * */
-  private RegionLoad mockRegion(String regionName, int memSizeMB, int fileSizeMb) {
+  private RegionLoad mockRegion(String regionName, int fileSizeMb) {
     RegionLoad region = Mockito.mock(RegionLoad.class);
     when(region.getName()).thenReturn(regionName.getBytes());
     when(region.getNameAsString()).thenReturn(regionName);
     when(region.getStorefileSizeMB()).thenReturn(fileSizeMb);
-    when(region.getMemStoreSizeMB()).thenReturn(memSizeMB);
     return region;
   }
 
