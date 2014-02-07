@@ -19,6 +19,7 @@ package org.apache.hadoop.hbase.util;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.hbase.ClusterStatus;
 import org.apache.hadoop.hbase.HRegionInfo;
@@ -38,11 +39,12 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-@InterfaceStability.Evolving
 /**
  * Computes size of each region for given table and given column families.
  * The value is used by MapReduce for better scheduling.
  * */
+@InterfaceStability.Evolving
+@InterfaceAudience.Private
 public class RegionSizeCalculator {
 
   private final Log LOG = LogFactory.getLog(RegionSizeCalculator.class);
@@ -83,17 +85,18 @@ public class RegionSizeCalculator {
     Collection<ServerName> servers = clusterStatus.getServers();
     final long megaByte = 1024L * 1024L;
 
+    //iterate all cluster regions, filter regions from our table and compute their size
     for (ServerName serverName: servers) {
       ServerLoad serverLoad = clusterStatus.getLoad(serverName);
 
       for (RegionLoad regionLoad: serverLoad.getRegionsLoad().values()) {
         byte[] regionId = regionLoad.getName();
 
-        long memSize = regionLoad.getMemStoreSizeMB();
-        long fileSize = regionLoad.getStorefileSizeMB();
-        long regionSizeBytes = (memSize + fileSize) * megaByte;
-
         if (tableRegions.contains(regionId)) {
+          long memSize = regionLoad.getMemStoreSizeMB();
+          long fileSize = regionLoad.getStorefileSizeMB();
+          long regionSizeBytes = (memSize + fileSize) * megaByte;
+
           sizeMap.put(regionId, regionSizeBytes);
           LOG.debug(MessageFormat.format("Region {0} has size {1}", regionLoad.getNameAsString(), regionSizeBytes));
         }
