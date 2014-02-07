@@ -23,9 +23,11 @@ import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.RegionLoad;
 import org.apache.hadoop.hbase.ServerLoad;
 import org.apache.hadoop.hbase.ServerName;
+import org.apache.hadoop.hbase.SmallTests;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -57,6 +59,7 @@ import static org.mockito.Mockito.when;
  * limitations under the License.
  */
 
+@Category(SmallTests.class)
 public class RegionSizeCalculatorTest {
 
   private Configuration configuration = new Configuration();
