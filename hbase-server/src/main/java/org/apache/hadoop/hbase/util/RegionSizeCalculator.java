@@ -45,7 +45,7 @@ import java.util.TreeSet;
  * The value is used by MapReduce for better scheduling.
  * */
 @InterfaceStability.Evolving
-@InterfaceAudience.Public
+@InterfaceAudience.Private
 public class RegionSizeCalculator {
 
   private final Log LOG = LogFactory.getLog(RegionSizeCalculator.class);

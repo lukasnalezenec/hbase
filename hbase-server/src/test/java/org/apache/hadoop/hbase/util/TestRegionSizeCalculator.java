@@ -42,7 +42,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @Category(SmallTests.class)
-public class RegionSizeCalculatorTest {
+public class TestRegionSizeCalculator {
 
   private Configuration configuration = new Configuration();
   private final long megabyte = 1024L * 1024L;
