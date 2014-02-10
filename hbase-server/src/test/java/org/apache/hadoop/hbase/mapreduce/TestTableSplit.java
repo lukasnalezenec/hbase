@@ -55,13 +55,10 @@ public class TestTableSplit {
   public void testHashCode_length() {
     TableSplit split1 = new TableSplit(TableName.valueOf("table"),
             "row-start".getBytes(),
-            "row-end".getBytes(), "location");
+            "row-end".getBytes(), "location", 1984);
     TableSplit split2 = new TableSplit(TableName.valueOf("table"),
             "row-start".getBytes(),
-            "row-end".getBytes(), "location");
-
-    split1.setLength(1984);
-    split2.setLength(1982);
+            "row-end".getBytes(), "location", 1982);
 
     assertEquals (split1, split2);
     assertTrue   (split1.hashCode() == split2.hashCode());
@@ -78,8 +75,7 @@ public class TestTableSplit {
   public void testLengthIsSerialized() throws Exception {
     TableSplit split1 = new TableSplit(TableName.valueOf("table"),
             "row-start".getBytes(),
-            "row-end".getBytes(), "location");
-    split1.setLength(666);
+            "row-end".getBytes(), "location", 666);
 
     TableSplit deserialized = new TableSplit(TableName.valueOf("table"),
             "row-start2".getBytes(),

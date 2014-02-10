@@ -167,11 +167,11 @@ public abstract class MultiTableInputFormatBase extends
                 (stopRow.length == 0 || Bytes.compareTo(keys.getSecond()[i],
                     stopRow) <= 0) && keys.getSecond()[i].length > 0 ? keys
                     .getSecond()[i] : stopRow;
+
+            long regionSize = sizeCalculator.getRegionSize(regionInfo.getRegionName());
             TableSplit split =
                 new TableSplit(table.getName(),
-                    scan, splitStart, splitStop, regionHostname);
-
-            split.setLength(sizeCalculator.getRegionSize(regionInfo.getRegionName()));
+                    scan, splitStart, splitStop, regionHostname, regionSize);
 
             splits.add(split);
             if (LOG.isDebugEnabled())

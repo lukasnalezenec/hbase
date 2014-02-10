@@ -101,6 +101,7 @@ implements Writable, Comparable<TableSplit> {
 
   /**
    * Creates a new instance while assigning all variables.
+   * Length of region is set to 0 (as in previous version)
    *
    * @param tableName  The name of the current table.
    * @param scan The scan associated with this split.
@@ -109,7 +110,21 @@ implements Writable, Comparable<TableSplit> {
    * @param location  The location of the region.
    */
   public TableSplit(TableName tableName, Scan scan, byte [] startRow, byte [] endRow,
-      final String location) {
+                    final String location) {
+    this(tableName, scan, startRow, endRow, location, 0L);
+  }
+
+  /**
+   * Creates a new instance while assigning all variables.
+   *
+   * @param tableName  The name of the current table.
+   * @param scan The scan associated with this split.
+   * @param startRow  The start row of the split.
+   * @param endRow  The end row of the split.
+   * @param location  The location of the region.
+   */
+  public TableSplit(TableName tableName, Scan scan, byte [] startRow, byte [] endRow,
+      final String location, long length) {
     this.tableName = tableName;
     try {
       this.scan =
@@ -120,6 +135,7 @@ implements Writable, Comparable<TableSplit> {
     this.startRow = startRow;
     this.endRow = endRow;
     this.regionLocation = location;
+    this.length = length;
   }
 
   /**
@@ -142,6 +158,20 @@ implements Writable, Comparable<TableSplit> {
   public TableSplit(TableName tableName, byte[] startRow, byte[] endRow,
       final String location) {
     this(tableName, null, startRow, endRow, location);
+  }
+
+  /**
+   * Creates a new instance without a scanner.
+   *
+   * @param tableName The name of the current table.
+   * @param startRow The start row of the split.
+   * @param endRow The end row of the split.
+   * @param location The location of the region.
+   * @param length Size of region in bytes
+   */
+  public TableSplit(TableName tableName, byte[] startRow, byte[] endRow,
+                    final String location, long length) {
+    this(tableName, null, startRow, endRow, location, length);
   }
 
   /**
@@ -222,10 +252,6 @@ implements Writable, Comparable<TableSplit> {
   @Override
   public long getLength() {
     return length;
-  }
-
-  public void setLength(long length) {
-    this.length = length;
   }
 
   /**

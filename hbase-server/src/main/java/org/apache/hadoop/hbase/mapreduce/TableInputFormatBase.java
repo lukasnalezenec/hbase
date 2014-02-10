@@ -166,10 +166,10 @@ extends InputFormat<ImmutableBytesWritable, Result> {
         throw new IOException("Expecting at least one region.");
       }
       List<InputSplit> splits = new ArrayList<InputSplit>(1);
+      long regionSize = sizeCalculator.getRegionSize(regLoc.getRegionInfo().getRegionName());
       TableSplit split = new TableSplit(table.getName(),
           HConstants.EMPTY_BYTE_ARRAY, HConstants.EMPTY_BYTE_ARRAY, regLoc
-              .getHostnamePort().split(Addressing.HOSTNAME_PORT_SEPARATOR)[0]);
-      split.setLength(sizeCalculator.getRegionSize(regLoc.getRegionInfo().getRegionName()));
+              .getHostnamePort().split(Addressing.HOSTNAME_PORT_SEPARATOR)[0], regionSize);
       splits.add(split);
       return splits;
     }
@@ -207,10 +207,11 @@ extends InputFormat<ImmutableBytesWritable, Result> {
           Bytes.compareTo(keys.getSecond()[i], stopRow) <= 0) &&
           keys.getSecond()[i].length > 0 ?
             keys.getSecond()[i] : stopRow;
-        TableSplit split = new TableSplit(table.getName(),
-          splitStart, splitStop, regionLocation);
+
         byte[] regionName = location.getRegionInfo().getRegionName();
-        split.setLength(sizeCalculator.getRegionSize(regionName));
+        long regionSize = sizeCalculator.getRegionSize(regionName);
+        TableSplit split = new TableSplit(table.getName(),
+          splitStart, splitStop, regionLocation, regionSize);
         splits.add(split);
         if (LOG.isDebugEnabled()) {
           LOG.debug("getSplits: split -> " + i + " -> " + split);
